@@ -61,7 +61,6 @@ RUN pip install qgis-plugin-manager &&\
     qgis_process.bin plugins enable mask &&\
     #qgis_process.bin plugins enable canflood &&\
     #qgis_process.bin plugins enable GeoCoding &&\
-    unset QT_QPA_PLATFORM && \
-    chmod 777 /root/.local/ -R
+    unset QT_QPA_PLATFORM
 
 WORKDIR /config
