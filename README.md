@@ -2,7 +2,7 @@
 
 # Docker image for QGIS - constructed for the use as Galaxy IT
 
-[QGIS}(https://qgis.org) the Free and Open Source Geographic Information System is now available in [Galaxy](https://usegalaxy.eu/root?tool_id=interactive_tool_qgis).
+[QGIS](https://qgis.org) the Free and Open Source Geographic Information System is now available in [Galaxy](https://usegalaxy.eu/root?tool_id=interactive_tool_qgis).
 
 ![qgis in Galaxy](./qgis_in_galaxy.png)
 
