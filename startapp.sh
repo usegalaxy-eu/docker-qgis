@@ -23,4 +23,8 @@ PATH=${PATH}:${QGISHOME}/bin_linux-amd64
 export LD_LIBRARY_PATH
 export PATH
 
+mkdir -p /config/xdg/data/QGIS/QGIS3/profiles/
+ln -s /root/.local/share/QGIS/QGIS3/profiles/default/ /config/xdg/data/QGIS/QGIS3/profiles/
+
+
 qgis --noversioncheck --nologo 
