@@ -23,4 +23,4 @@ PATH=${PATH}:${QGISHOME}/bin_linux-amd64
 export LD_LIBRARY_PATH
 export PATH
 
-qgis
+qgis --noversioncheck --nologo 

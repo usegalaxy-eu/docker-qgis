@@ -1,3 +1,4 @@
+# Use the jlesage/baseimage-gui:ubuntu-22.04-v4 as base image
 FROM jlesage/baseimage-gui:ubuntu-22.04-v4 AS build
 
 MAINTAINER Bjoern Gruening, bjoern.gruening@gmail.com
@@ -6,39 +7,43 @@ RUN apt-get update -y && \
      DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
          ca-certificates \
          wget \
+         unzip \
          libgl1 \
-         xz-utils \
-         openjfx \
          qt5dxcb-plugin && \
      rm -rf /var/lib/apt/lists/*
 
-RUN mkdir -p /opt/qupath &&\
-    chmod 777 /opt/qupath &&\
-    cd /opt/qupath/ && \
-    wget https://github.com/qupath/qupath/releases/download/v0.4.3/QuPath-0.4.3-Linux.tar.xz &&\
-    tar -xvf QuPath-0.4.3-Linux.tar.xz && \
-    rm /opt/qupath/QuPath-0.4.3-Linux.tar.xz && \
-    chmod u+x /opt/qupath/QuPath/bin/QuPath
-
-# Generate and install favicons.
-RUN APP_ICON_URL=https://github.com/qupath/qupath/wiki/images/qupath_128.png && \
-    install_app_icon.sh "$APP_ICON_URL"
-
 COPY startapp.sh /startapp.sh
-RUN chmod +x /startapp.sh
+RUN chmod +x /startapp.sh && \
+    mkdir -p /app/qgis
 
-# Installing a few extensions
-RUN cd /opt/qupath/QuPath/lib/app/ && \
-    wget https://github.com/qupath/qupath-extension-djl/releases/download/v0.2.0/qupath-extension-djl-0.2.0.jar &&\
-    wget https://github.com/qupath/qupath-extension-stardist/releases/download/v0.4.0/qupath-extension-stardist-0.4.0.jar &&\
-    sed -i '/^\[Application\]$/a app.classpath=$APPDIR/qupath-extension-djl-0.2.0.jar' QuPath.cfg  && \
-    sed -i '/^\[Application\]$/a app.classpath=$APPDIR/qupath-extension-stardist-0.4.0.jar' QuPath.cfg
-
+# ... (rest of your Dockerfile)
+    
 # Set the name of the application.
-ENV APP_NAME="QuPath"
+ENV APP_NAME="QGIS"
+ENV APP_VERSION="3.22"
 
 ENV KEEP_APP_RUNNING=0
 
 ENV TAKE_CONFIG_OWNERSHIP=1
+
+# Set environment
+ENV JAVA_HOME /opt/jdk
+ENV PATH ${PATH}:${JAVA_HOME}/bin
+WORKDIR /app/qgis
+
+USER root
+
+# Install required packages for X11 and QGIS
+RUN DEBIAN_FRONTEND=noninteractive apt update && apt install wget gnupg -y && \
+    wget -O - https://qgis.org/downloads/qgis-2022.gpg.key | gpg --import && \
+    gpg --export --armor D155B8E6A419C5BE | apt-key add - && \
+    apt-get update && apt-get install -y qgis qgis-plugin-grass && \
+    rm -rf /var/lib/apt/lists/*
+
+# Add pluggins to the QGIS tool (just Trends.Earth for now)
+# You can just download here the zip folder for your plugins
+RUN mkdir /home/$NB_USER/plugins &&\
+    cd /home/$NB_USER/plugins && \
+    wget -O trends_earth.zip https://github.com/ConservationInternational/trends.earth/releases/download/v1.0.10/LDMP-1.0.10.zip
 
 WORKDIR /config
