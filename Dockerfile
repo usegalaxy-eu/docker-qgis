@@ -9,14 +9,21 @@ RUN apt-get update -y && \
          wget \
          unzip \
          libgl1 \
-         qt5dxcb-plugin && \
+         qt5dxcb-plugin \
+         ## needed for the QGIS plugin manager
+         pip && \
      rm -rf /var/lib/apt/lists/*
+
+# Install required packages for X11 and QGIS
+RUN DEBIAN_FRONTEND=noninteractive apt update && apt install wget gnupg -y && \
+    wget -O - https://qgis.org/downloads/qgis-2022.gpg.key | gpg --import && \
+    gpg --export --armor D155B8E6A419C5BE | apt-key add - && \
+    apt-get update && apt-get install -y qgis qgis-plugin-grass && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY startapp.sh /startapp.sh
 RUN chmod +x /startapp.sh && \
     mkdir -p /app/qgis
-
-# ... (rest of your Dockerfile)
     
 # Set the name of the application.
 ENV APP_NAME="QGIS"
@@ -33,17 +40,37 @@ WORKDIR /app/qgis
 
 USER root
 
-# Install required packages for X11 and QGIS
-RUN DEBIAN_FRONTEND=noninteractive apt update && apt install wget gnupg -y && \
-    wget -O - https://qgis.org/downloads/qgis-2022.gpg.key | gpg --import && \
-    gpg --export --armor D155B8E6A419C5BE | apt-key add - && \
-    apt-get update && apt-get install -y qgis qgis-plugin-grass && \
-    rm -rf /var/lib/apt/lists/*
-
 # Add pluggins to the QGIS tool (just Trends.Earth for now)
 # You can just download here the zip folder for your plugins
-RUN mkdir /home/$NB_USER/plugins &&\
-    cd /home/$NB_USER/plugins && \
-    wget -O trends_earth.zip https://github.com/ConservationInternational/trends.earth/releases/download/v1.0.10/LDMP-1.0.10.zip
+RUN pip install qgis-plugin-manager &&\
+    # special trends earth manip to counter path issues (should contact the authors to fix this in their code)
+    mkdir -p /root/trends_earth_data/reports/outputs/ && \
+    # trends earth again
+    mkdir /root/trends_earth_data/reports/templates && \
+    # trends earth again
+    touch /root/trends_earth_data/reports/templates/templates.json && \
+    #Back to the general plugin installation
+    mkdir -p /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/ &&\
+    cd /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/ &&\
+    qgis-plugin-manager init && \
+    qgis-plugin-manager update && \
+    ##qgis-plugin-manager install trends.earth && \
+    qgis-plugin-manager install 'Hugin QGIS' && \
+    qgis-plugin-manager install 'Mask' && \
+    qgis-plugin-manager install 'trends.earth' &&\
+    #qgis-plugin-manager install 'CanFlood' && \
+    #qgis-plugin-manager install 'GeoCoding' && \
+    mkdir -p ${HOME}/.local/share/ &&\
+    #ln -s /config/xdg/data/QGIS ${HOME}/.local/share/ && \
+    #export XDG_DATA_HOME=/config/xdg/data && \
+    #export XDG_CONFIG_HOME=/config/xdg/config && \
+    export QT_QPA_PLATFORM=offscreen &&\
+    qgis_process.bin plugins enable hugin_qgis &&\
+    qgis_process.bin plugins enable mask &&\
+    #Next is trends earth plugin (different name don't know why)
+    qgis_process.bin plugins enable LDMP &&\ 
+    #qgis_process.bin plugins enable canflood &&\
+    #qgis_process.bin plugins enable GeoCoding &&\
+    unset QT_QPA_PLATFORM
 
 WORKDIR /config
