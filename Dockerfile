@@ -43,6 +43,13 @@ USER root
 # Add pluggins to the QGIS tool (just Trends.Earth for now)
 # You can just download here the zip folder for your plugins
 RUN pip install qgis-plugin-manager &&\
+    # special trends earth manip to counter path issues (should contact the authors to fix this in their code)
+    mkdir -p /root/trends_earth_data/reports/outputs/ && \
+    # trends earth again
+    mkdir /root/trends_earth_data/reports/templates && \
+    # trends earth again
+    touch /root/trends_earth_data/reports/templates/templates.json && \
+    #Back to the general plugin installation
     mkdir -p /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/ &&\
     cd /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/ &&\
     qgis-plugin-manager init && \
@@ -50,6 +57,7 @@ RUN pip install qgis-plugin-manager &&\
     ##qgis-plugin-manager install trends.earth && \
     qgis-plugin-manager install 'Hugin QGIS' && \
     qgis-plugin-manager install 'Mask' && \
+    qgis-plugin-manager install 'trends.earth' &&\
     #qgis-plugin-manager install 'CanFlood' && \
     #qgis-plugin-manager install 'GeoCoding' && \
     mkdir -p ${HOME}/.local/share/ &&\
@@ -59,6 +67,8 @@ RUN pip install qgis-plugin-manager &&\
     export QT_QPA_PLATFORM=offscreen &&\
     qgis_process.bin plugins enable hugin_qgis &&\
     qgis_process.bin plugins enable mask &&\
+    #Next is trends earth plugin (different name don't know why)
+    qgis_process.bin plugins enable LDMP &&\ 
     #qgis_process.bin plugins enable canflood &&\
     #qgis_process.bin plugins enable GeoCoding &&\
     unset QT_QPA_PLATFORM
