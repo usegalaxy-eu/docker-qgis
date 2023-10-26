@@ -26,7 +26,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt update && apt install wget gnupg -y && \
     echo "Components: main" >> /etc/apt/sources.list.d/qgis.sources && \
     echo "Signed-By: /etc/apt/keyrings/qgis-archive-keyring.gpg" >> /etc/apt/sources.list.d/qgis.sources && \    
     apt-get update && apt-get install -y qgis qgis-plugin-grass && \
-    apt-get update && apt-get install -y qgis qgis-plugin-grass && \
+    pip3 install future &&  \
     rm -rf /var/lib/apt/lists/*
 
 COPY startapp.sh /startapp.sh
