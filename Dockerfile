@@ -64,7 +64,7 @@ RUN pip install qgis-plugin-manager &&\
     qgis-plugin-manager update && \
     ##qgis-plugin-manager install trends.earth && \
     qgis-plugin-manager install 'Hugin QGIS' && \
-    qgis-plugin-manager install 'Mask' && \
+    ##qgis-plugin-manager install 'Mask' && \
     qgis-plugin-manager install 'trends.earth' &&\
     #qgis-plugin-manager install 'CanFlood' && \
     #qgis-plugin-manager install 'GeoCoding' && \
