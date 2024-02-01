@@ -35,7 +35,7 @@ RUN chmod +x /startapp.sh && \
     
 # Set the name of the application.
 ENV APP_NAME="QGIS"
-ENV APP_VERSION="3.32"
+ENV APP_VERSION="3.34"
 
 ENV KEEP_APP_RUNNING=0
 
