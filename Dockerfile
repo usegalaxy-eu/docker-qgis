@@ -74,7 +74,7 @@ RUN pip install qgis-plugin-manager &&\
     #export XDG_CONFIG_HOME=/config/xdg/config && \
     export QT_QPA_PLATFORM=offscreen &&\
     qgis_process.bin plugins enable hugin_qgis &&\
-    qgis_process.bin plugins enable mask &&\
+    ##qgis_process.bin plugins enable mask &&\
     #Next is trends earth plugin (different name don't know why)
     qgis_process.bin plugins enable LDMP &&\ 
     #qgis_process.bin plugins enable canflood &&\
