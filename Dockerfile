@@ -35,7 +35,7 @@ RUN chmod +x /startapp.sh && \
     
 # Set the name of the application.
 ENV APP_NAME="QGIS"
-ENV APP_VERSION="3.32"
+ENV APP_VERSION="3.34"
 
 ENV KEEP_APP_RUNNING=0
 
@@ -64,7 +64,7 @@ RUN pip install qgis-plugin-manager &&\
     qgis-plugin-manager update && \
     ##qgis-plugin-manager install trends.earth && \
     qgis-plugin-manager install 'Hugin QGIS' && \
-    qgis-plugin-manager install 'Mask' && \
+    ##qgis-plugin-manager install 'Mask' && \
     qgis-plugin-manager install 'trends.earth' &&\
     #qgis-plugin-manager install 'CanFlood' && \
     #qgis-plugin-manager install 'GeoCoding' && \
@@ -74,7 +74,7 @@ RUN pip install qgis-plugin-manager &&\
     #export XDG_CONFIG_HOME=/config/xdg/config && \
     export QT_QPA_PLATFORM=offscreen &&\
     qgis_process.bin plugins enable hugin_qgis &&\
-    qgis_process.bin plugins enable mask &&\
+    ##qgis_process.bin plugins enable mask &&\
     #Next is trends earth plugin (different name don't know why)
     qgis_process.bin plugins enable LDMP &&\ 
     #qgis_process.bin plugins enable canflood &&\
