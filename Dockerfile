@@ -56,6 +56,11 @@ WORKDIR /app/qgis
 # Add plugins to the QGIS tool (trends.earth, Hugin and FinBIF for now)
 # You can just download here the zip folder for your plugins
 RUN . /opt/base/bin/cmn-pkg && init_env &&\
+    # The base image leaves HOME unset/odd during build; without a sane HOME
+    # QGIS resolves its profile directory outside /root and 'qgis_process
+    # plugins enable' finds nothing. Root's real home is where the plugins
+    # are installed below.
+    export HOME=/root &&\
     pip3 install --break-system-packages --no-deps qgis-plugin-manager &&\
     # special trends earth manip to counter path issues (should contact the authors to fix this in their code)
     mkdir -p /root/trends_earth_data/reports/outputs/ && \
