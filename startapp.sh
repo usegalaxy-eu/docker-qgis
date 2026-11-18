@@ -23,7 +23,10 @@ PATH=${PATH}:${QGISHOME}/bin_linux-amd64
 export LD_LIBRARY_PATH
 export PATH
 
-mkdir -p /config/xdg/data/QGIS/QGIS3/profiles/
-cp -r /root/.local/share/QGIS/QGIS3/profiles/default/ /config/xdg/data/QGIS/QGIS3/profiles/
+# QGIS 4 keeps user profiles under ~/.local/share/QGIS/QGIS4/profiles
+# (QGIS 3 used ~/.local/share/QGIS/QGIS3/profiles). The jlesage baseimage sets
+# XDG_DATA_HOME=/config/xdg/data, so copy the baked-in profile there.
+mkdir -p /config/xdg/data/QGIS/QGIS4/profiles/
+cp -r /root/.local/share/QGIS/QGIS4/profiles/default/ /config/xdg/data/QGIS/QGIS4/profiles/
 
 qgis --noversioncheck --nologo 

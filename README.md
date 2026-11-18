@@ -13,7 +13,7 @@
 You can start the container outside of Galaxy with:
 
 ```bash
-docker run -i -t --rm -p 8080:5800 quay.io/galaxy/qgis-headless:3.22 bash
+docker run -i -t --rm -p 8080:5800 quay.io/galaxy/qgis-headless:4.2 bash
 ```
 
 Once you are in the container you can start the application with:
