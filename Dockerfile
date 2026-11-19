@@ -1,56 +1,67 @@
-# Use the jlesage/baseimage-gui:ubuntu-22.04-v4 as base image
-FROM jlesage/baseimage-gui:ubuntu-22.04-v4 AS build
+# Use the jlesage/baseimage-gui:ubuntu-24.04-v4.14 as base image
+FROM jlesage/baseimage-gui:ubuntu-24.04-v4.14 AS build
 
-MAINTAINER Bjoern Gruening, bjoern.gruening@gmail.com
+LABEL maintainer="Bjoern Gruening <bjoern.gruening@gmail.com>"
 
-RUN apt-get update -y && \
-     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-         ca-certificates \
-         wget \
-         unzip \
-         libgl1 \
-         qt5dxcb-plugin \
-         ## needed for the QGIS plugin manager
-         pip && \
-     rm -rf /var/lib/apt/lists/*
+# Install build prerequisites.
+# Note: add-pkg is the baseimage's package helper.
+RUN add-pkg ca-certificates wget unzip python3-pip
 
-# Install required packages for X11 and QGIS
-RUN DEBIAN_FRONTEND=noninteractive apt update && apt install wget gnupg -y && \
-    wget -O - https://qgis.org/downloads/qgis-2022.gpg.key | gpg --import && \
-    gpg --export --armor D155B8E6A419C5BE | apt-key add - && \
-    wget -O /etc/apt/keyrings/qgis-archive-keyring.gpg https://download.qgis.org/downloads/qgis-archive-keyring.gpg && \
+# Add the QGIS apt repository.
+# The LTR repo is used because Ubuntu 24.04 (noble) only ships QGIS < 4
+# (QGIS 4 requires Qt6).
+RUN mkdir -p /etc/apt/keyrings && \
+    wget -q -O /etc/apt/keyrings/qgis-archive-keyring.gpg https://download.qgis.org/downloads/qgis-archive-keyring.gpg && \
     echo "Types: deb deb-src" > /etc/apt/sources.list.d/qgis.sources && \
-    echo "URIs: https://qgis.org/debian" >> /etc/apt/sources.list.d/qgis.sources && \
-    echo "Suites: jammy" >> /etc/apt/sources.list.d/qgis.sources && \
+    echo "URIs: https://qgis.org/debian-ltr" >> /etc/apt/sources.list.d/qgis.sources && \
+    echo "Suites: noble" >> /etc/apt/sources.list.d/qgis.sources && \
     echo "Architectures: amd64" >> /etc/apt/sources.list.d/qgis.sources && \
     echo "Components: main" >> /etc/apt/sources.list.d/qgis.sources && \
-    echo "Signed-By: /etc/apt/keyrings/qgis-archive-keyring.gpg" >> /etc/apt/sources.list.d/qgis.sources && \    
-    apt-get update && apt-get install -y qgis qgis-plugin-grass && \
-    pip3 install future &&  \
-    rm -rf /var/lib/apt/lists/*
+    echo "Signed-By: /etc/apt/keyrings/qgis-archive-keyring.gpg" >> /etc/apt/sources.list.d/qgis.sources
+
+# Install QGIS and the Python dependencies of the FinBIF plugin.
+RUN add-pkg \
+        qgis \
+        qgis-plugin-grass \
+        python3-geopandas \
+        python3-pandas \
+        python3-numpy \
+        python3-shapely \
+        python3-requests \
+        python3-certifi \
+        python3-urllib3 && \
+    pip3 install --break-system-packages future qgis-plugin-manager
 
 COPY startapp.sh /startapp.sh
 RUN chmod +x /startapp.sh && \
     mkdir -p /app/qgis
-    
+
 # Set the name of the application.
 ENV APP_NAME="QGIS"
-ENV APP_VERSION="3.34"
+ENV APP_VERSION="3.44"
 
 ENV KEEP_APP_RUNNING=0
 
 ENV TAKE_CONFIG_OWNERSHIP=1
 
 # Set environment
-ENV JAVA_HOME /opt/jdk
-ENV PATH ${PATH}:${JAVA_HOME}/bin
+ENV JAVA_HOME=/opt/jdk
+ENV PATH=${PATH}:${JAVA_HOME}/bin
 WORKDIR /app/qgis
 
-USER root
+# NOTE: no explicit 'USER root' here: BuildKit resolves a USER *name* against
+# /etc/passwd, which is a dangling symlink in the base image until container
+# startup (the default user is root anyway).
 
-# Add pluggins to the QGIS tool (just Trends.Earth for now)
+# Add plugins to the QGIS tool (trends.earth, Hugin and FinBIF for now)
 # You can just download here the zip folder for your plugins
-RUN pip install qgis-plugin-manager &&\
+RUN . /opt/base/bin/cmn-pkg && init_env &&\
+    # The base image leaves HOME unset/odd during build; without a sane HOME
+    # QGIS resolves its profile directory outside /root and 'qgis_process
+    # plugins enable' finds nothing. Root's real home is where the plugins
+    # are installed below.
+    export HOME=/root &&\
+    pip3 install --break-system-packages --no-deps qgis-plugin-manager &&\
     # special trends earth manip to counter path issues (should contact the authors to fix this in their code)
     mkdir -p /root/trends_earth_data/reports/outputs/ && \
     # trends earth again
@@ -62,23 +73,27 @@ RUN pip install qgis-plugin-manager &&\
     cd /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/ &&\
     qgis-plugin-manager init && \
     qgis-plugin-manager update && \
-    ##qgis-plugin-manager install trends.earth && \
-    qgis-plugin-manager install 'Hugin QGIS' && \
-    ##qgis-plugin-manager install 'Mask' && \
+    ## Hugin QGIS is flagged experimental on plugins.qgis.org -> needs --pre
+    qgis-plugin-manager install 'Hugin QGIS' --pre && \
     qgis-plugin-manager install 'trends.earth' &&\
-    #qgis-plugin-manager install 'CanFlood' && \
-    #qgis-plugin-manager install 'GeoCoding' && \
+    # FinBIF plugin: fetched from plugins.qgis.org, pinned to the latest stable release
+    wget -q -O /tmp/FinBIF_QGIS_Plugin.zip https://plugins.qgis.org/plugins/FinBIF_QGIS_Plugin/version/2.3/download/ && \
+    unzip -q /tmp/FinBIF_QGIS_Plugin.zip -d /root/.local/share/QGIS/QGIS3/profiles/default/python/plugins/ && \
+    rm /tmp/FinBIF_QGIS_Plugin.zip && \
     mkdir -p ${HOME}/.local/share/ &&\
-    #ln -s /config/xdg/data/QGIS ${HOME}/.local/share/ && \
-    #export XDG_DATA_HOME=/config/xdg/data && \
-    #export XDG_CONFIG_HOME=/config/xdg/config && \
     export QT_QPA_PLATFORM=offscreen &&\
     qgis_process.bin plugins enable hugin_qgis &&\
-    ##qgis_process.bin plugins enable mask &&\
-    #Next is trends earth plugin (different name don't know why)
-    qgis_process.bin plugins enable LDMP &&\ 
-    #qgis_process.bin plugins enable canflood &&\
-    #qgis_process.bin plugins enable GeoCoding &&\
-    unset QT_QPA_PLATFORM
+    # Next is trends earth plugin (different name don't know why)
+    qgis_process.bin plugins enable LDMP &&\
+    unset QT_QPA_PLATFORM &&\
+    # FinBIF is a GUI-only plugin: 'qgis_process plugins enable' manages to enable it,
+    # but then fails to *start* it, because initGui() needs a real QgisInterface which
+    # the headless qgis_process does not provide -> the setting would not be persisted.
+    # Instead, enable it directly in the profile settings (the ini is created by the
+    # two successful enable calls above).
+    sed -i '/^\[PythonPlugins\]/a FinBIF_QGIS_Plugin=true' \
+        /root/.local/share/QGIS/QGIS3/profiles/default/QGIS/QGIS3.ini &&\
+    grep -q '^FinBIF_QGIS_Plugin=true' \
+        /root/.local/share/QGIS/QGIS3/profiles/default/QGIS/QGIS3.ini
 
 WORKDIR /config
